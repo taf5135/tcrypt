@@ -12,7 +12,6 @@ from ChangingState import ChangingState
 def do_crypt(file_in, file_out, cipher : TSymCipher):   
 
     batch_size = 5000000
-
     with open(file_in, 'rb') as fin:
         with open(file_out, 'wb') as fout:
             while (in_bytes := fin.read(batch_size)): 
@@ -20,6 +19,7 @@ def do_crypt(file_in, file_out, cipher : TSymCipher):
                 keystream = cipher.getbytes(blen)
                 cstream = [in_bytes[i] ^ keystream[i] for i in range(blen)]
                 fout.write(bytes(cstream))
+
 
 def changingstate_basic_test():
     uint = int.from_bytes([ord('U') for _ in range(32)], 'big')
@@ -38,8 +38,6 @@ def changingstate_basic_test():
     c.state = uint
     substate = c._substitute(c.state, c.sbox)
     print(f"Subbed from original state: {bin(substate)}")
-
-
 
 
 def changingstate_full_test():
@@ -66,7 +64,6 @@ def changingstate_full_test():
     assert len(d.cache) == 1
 
 
-
 def megabyte_speedtest():
     uint = int.from_bytes([ord('U') for _ in range(32)], 'big')
     c = ChangingState(uint, 0)
@@ -81,6 +78,7 @@ def megabyte_speedtest():
     d.getbytes(1000000)
     t2 = time.process_time()
     print(f"Producing 1mb in the more clever way takes {t2-t1} secs")
+
 
 #use this for stubbing things out
 def main():
@@ -99,7 +97,7 @@ def main():
     do_crypt(encrypted, decrypted, cipher)
     print("Finished decryption")
 
-    #FC file1 file2
+    #FC file1 file2, windows version of diff
     subprocess.run(["FC", first, decrypted])
 
     return 0

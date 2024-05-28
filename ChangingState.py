@@ -10,7 +10,7 @@ class ChangingState(TSymCipher):
         super().__init__(state)
 
         for i in range(8):
-            state ^= (nonce << 64 * i) #TODO test if this works
+            state ^= (nonce << 64 * i)
         self.nonce = nonce
         self.state = state
 
@@ -74,6 +74,11 @@ class ChangingState(TSymCipher):
         for i in range(8):
             self.state ^= (self.nonce << 64 * i)
 
+    def _set_next_state(self):
+        self.state = self._permute(self.state, self.permbox) #optimization note: if we want to gain speed in exchange for bigger code, we can change _substitute
+        self.state = self._substitute(self.state, self.sbox) #and following lines to remove redundant to_bytes and from_bytes calls
+        self.state = self._expand(self.state)
+
     def _permute(self, state, box): 
         new_state = 0
         for shift in box:
@@ -103,7 +108,7 @@ class ChangingState(TSymCipher):
             combined = in_bytes[byte_idx] ^ in_bytes[byte_idx-1]
             combined ^= (combined >> 4) #preserves parity at each step since we're "folding" the byte over itself
             combined ^= (combined >> 2)
-            combined ^= (combined >> 1) #TODO clean this up a bit
+            combined ^= (combined >> 1) 
             out_byte = in_bytes[byte_idx] | ((combined & 1) << 7)
             out_bytes.append(out_byte)
         return int.from_bytes(out_bytes, 'big')
@@ -113,16 +118,11 @@ class ChangingState(TSymCipher):
         out_bytes = self.cache[:n]
         n -= len(self.cache)
 
-
-        #the below code is OLD and i'm rewritting it with the code above
         rounds = ceil(n / 32)
 
         round_bytes = []
         for r in range(rounds):
-            self.state = self._permute(self.state, self.permbox) #optimization note: if we want to gain speed in exchange for bigger code, we can change _substitute
-            self.state = self._substitute(self.state, self.sbox) #and following lines to remove redundant to_bytes and from_bytes calls
-            self.state = self._expand(self.state)
-
+            self._set_next_state()
             perm = self._permute(self.state, self.out_permbox) 
             sub_state = self._substitute(perm, self.out_sbox)
             out_state = self._expand(sub_state)
@@ -139,9 +139,7 @@ class ChangingState(TSymCipher):
     def getbyte(self):
         
         if len(self.cache) == 0:
-            self.state = self._permute(self.state, self.permbox) 
-            self.state = self._substitute(self.state, self.sbox)
-            self.state = self._expand(self.state)
+            self._set_next_state()
             
             perm = self._permute(self.state, self.out_permbox) 
             sub_state = self._substitute(perm, self.out_sbox)
