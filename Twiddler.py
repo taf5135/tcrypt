@@ -1,3 +1,5 @@
+from math import ceil
+from bitops import rotate_left, rotate_right
 from TSymCipher import TSymCipher
 
 #Objective:
@@ -18,6 +20,11 @@ class Twiddler(TSymCipher):
         self.reg3 = state >> 64  & BIT_MASK_64
         self.reg4 = state        & BIT_MASK_64
 
+        self.cache = []
+
+        for _ in range(64): #Ensures every bit propagates to every other
+            self.clock()
+
         #TODO clock the cipher 32 times (at least, probably more) to set up the state
         #TODO should have some kind of IV perhaps to ensure that 
     
@@ -35,18 +42,45 @@ class Twiddler(TSymCipher):
         register ^= register >> 9
         return register
 
-    #Returns some number of bytes
+    #Returns 8 bytes
     def clock(self):
-        #Steps:
-        #1: rotate reg1 and reg3 right, rotate reg2 and reg4 left
-        #2: reg1_next = reg2, reg3, reg4 TODO
-        #3: reg2_next = reg1, reg3, reg4
-        #4: reg3_next = reg1, reg2, reg4
-        #5: reg4_next = reg1, reg2, reg3
-        #output = 
-         
-        pass
+        #75 operations excluding function calls
+        reg1 = rotate_left(reg1, 1, 64)
+        reg2 = rotate_right(reg2, 1, 64)
+        reg3 = rotate_left(reg3, 1, 64)
+        reg4 = rotate_right(reg4, 1, 64)
+        reg1_next = (self.xorshift(reg2) & self.xorshift_alternate(reg3)) ^ self.xorshift(reg4) ^ self.xorshift(reg1)
+        reg2_next = (self.xorshift(reg1) & self.xorshift_alternate(reg2)) ^ self.xorshift(reg3) ^ self.xorshift(reg2)
+        reg3_next = (self.xorshift(reg1) & self.xorshift_alternate(reg3)) ^ self.xorshift(reg2) ^ self.xorshift(reg3)
+        reg4_next = (self.xorshift(reg2) & self.xorshift_alternate(reg3)) ^ self.xorshift(reg1) ^ self.xorshift(reg4)
+        reg1, reg2, reg3, reg4 = reg1_next, reg2_next, reg3_next, reg4_next
+        return list((reg1 ^ reg2 ^ reg3 ^ reg4).to_bytes(8, 'big'))
 
+
+    def getbytes(self, n):
+
+        out_bytes = self.cache[:n]
+        n -= len(self.cache)
+
+        rounds = ceil(n / 8)
+
+        round_bytes = []
+        for r in range(rounds):
+            round_bytes += self.clock()
+        self.cache = round_bytes[n:]
+        out_bytes += round_bytes[:n] 
+        return out_bytes
+
+
+    def getbyte(self):
+        if self.cache == []:
+            computed_bytes = self.clock()
+            self.cache = computed_bytes[1:]
+            return computed_bytes[0]
+        else:
+            dq = self.cache[0]
+            self.cache = self.cache[1:]
+            return dq
     """
     Swap bits:
 
