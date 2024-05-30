@@ -7,6 +7,7 @@ import time
 
 from TSymCipher import TSymCipher
 from ChangingState import ChangingState
+from Twiddler import Twiddler
 
 
 def do_crypt(file_in, file_out, cipher : TSymCipher):   
@@ -66,14 +67,14 @@ def changingstate_full_test():
 
 def megabyte_speedtest():
     uint = int.from_bytes([ord('U') for _ in range(32)], 'big')
-    c = ChangingState(uint, 0)
+    c = Twiddler(uint, 0)
     t1 = time.process_time()
     for i in range(1000000):
         c.getbyte()
     t2 = time.process_time()
     print(f"Producing 1mb the naiive way takes {t2-t1} secs")
 
-    d = ChangingState(uint, 0)
+    d = Twiddler(uint, 0)
     t1 = time.process_time()
     d.getbytes(1000000)
     t2 = time.process_time()
@@ -103,7 +104,7 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    main()
+    #main()
     #changingstate_basic_test()
     #changingstate_full_test()
-    #megabyte_speedtest()
+    megabyte_speedtest()

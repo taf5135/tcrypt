@@ -47,26 +47,27 @@ class Twiddler(TSymCipher):
         register ^= register << 13
         register ^= register >> 7
         register ^= register << 17
-        return register
+        return register & BIT_MASK_64
 
     def xorshift_alternate(self, register):
         register ^= register << 7
         register ^= register >> 9
-        return register
+        return register & BIT_MASK_64
 
     #Returns 8 bytes
     def clock(self):
         #75 operations excluding function calls
-        reg1 = rotate_left(reg1, 1, 64)
-        reg2 = rotate_right(reg2, 1, 64)
-        reg3 = rotate_left(reg3, 1, 64)
-        reg4 = rotate_right(reg4, 1, 64)
-        reg1_next = (self.xorshift(reg2) & self.xorshift_alternate(reg3)) ^ self.xorshift(reg4) ^ self.xorshift(reg1)
-        reg2_next = (self.xorshift(reg1) & self.xorshift_alternate(reg2)) ^ self.xorshift(reg3) ^ self.xorshift(reg2)
-        reg3_next = (self.xorshift(reg1) & self.xorshift_alternate(reg3)) ^ self.xorshift(reg2) ^ self.xorshift(reg3)
-        reg4_next = (self.xorshift(reg2) & self.xorshift_alternate(reg3)) ^ self.xorshift(reg1) ^ self.xorshift(reg4)
-        reg1, reg2, reg3, reg4 = reg1_next, reg2_next, reg3_next, reg4_next
-        return list((reg1 ^ reg2 ^ reg3 ^ reg4).to_bytes(8, 'big'))
+        #BUG: reg2 and reg4 are too long after the rotate_right calls
+        self.reg1 = rotate_left(self.reg1)
+        self.reg2 = rotate_right(self.reg2)
+        self.reg3 = rotate_left(self.reg3)
+        self.reg4 = rotate_right(self.reg4)
+        reg1_next = (self.xorshift(self.reg2) & self.xorshift_alternate(self.reg3)) ^ self.xorshift(self.reg4) ^ self.xorshift(self.reg1)
+        reg2_next = (self.xorshift(self.reg1) & self.xorshift_alternate(self.reg2)) ^ self.xorshift(self.reg3) ^ self.xorshift(self.reg2)
+        reg3_next = (self.xorshift(self.reg1) & self.xorshift_alternate(self.reg3)) ^ self.xorshift(self.reg2) ^ self.xorshift(self.reg3)
+        reg4_next = (self.xorshift(self.reg2) & self.xorshift_alternate(self.reg3)) ^ self.xorshift(self.reg1) ^ self.xorshift(self.reg4)
+        self.reg1, self.reg2, self.reg3, self.reg4 = reg1_next, reg2_next, reg3_next, reg4_next
+        return list((self.reg1 ^ self.reg2 ^ self.reg3 ^ self.reg4).to_bytes(8, 'big'))
 
 
     def getbytes(self, n):
