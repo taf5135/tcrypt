@@ -13,6 +13,7 @@ class Twiddler(TSymCipher):
 
     def __init__(self, state, nonce=0):
         super().__init__(state)
+        self.nonce = nonce
 
         #Each of these is 64 bits long to make computations easy
         self.reg1 = (state >> 192 ^ nonce) & BIT_MASK_64
@@ -27,6 +28,18 @@ class Twiddler(TSymCipher):
 
         #TODO should have some kind of IV perhaps to ensure that there is no weak key
     
+    def reset(self):
+        self.reg1 = (self.initial_state >> 192 ^ self.nonce) & BIT_MASK_64
+        self.reg2 = (self.initial_state >> 128 ^ self.nonce) & BIT_MASK_64
+        self.reg3 = (self.initial_state >> 64  ^ self.nonce) & BIT_MASK_64
+        self.reg4 = (self.initial_state        ^ self.nonce) & BIT_MASK_64
+
+        self.cache = []
+
+        for _ in range(64): #Ensures every bit propagates to every other
+            self.clock()
+
+
     #Just performs a 64-bit xorshift operation on the input
     #Known to have a long period, but fails many linear recurrence tests
     #Taken directly from sample implementation because the algorithm is so simple

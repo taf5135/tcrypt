@@ -69,7 +69,7 @@ class ChangingState(TSymCipher):
         return box
 
     def reset(self):
-        self.state = self.inital_state
+        self.state = self.initial_state
         self.cache = []
         for i in range(8):
             self.state ^= (self.nonce << 64 * i)
