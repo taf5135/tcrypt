@@ -20,9 +20,23 @@ class Twiddler(TSymCipher):
 
         #TODO clock the cipher 32 times (at least, probably more) to set up the state
         #TODO should have some kind of IV perhaps to ensure that 
+    
+    #Just performs a 64-bit xorshift operation on the input
+    #Known to have a long period, but fails many linear recurrence tests
+    #Taken directly from sample implementation because the algorithm is so simple
+    def xorshift(self, register):
+        register ^= register << 13
+        register ^= register >> 7
+        register ^= register << 17
+        return register
+
+    def xorshift_alternate(self, register):
+        register ^= register << 7
+        register ^= register >> 9
+        return register
 
     #Returns some number of bytes
-    def clock():
+    def clock(self):
         #Steps:
         #1: rotate reg1 and reg3 right, rotate reg2 and reg4 left
         #2: reg1_next = reg2, reg3, reg4 TODO
