@@ -57,11 +57,8 @@ class Twiddler(TSymCipher):
     #Returns 8 bytes
     def clock(self):
         #75 operations excluding function calls
-        #BUG: reg2 and reg4 are too long after the rotate_right calls
         self.reg1 = rotate_left(self.reg1)
-        self.reg2 = rotate_right(self.reg2)
         self.reg3 = rotate_left(self.reg3)
-        self.reg4 = rotate_right(self.reg4)
         reg1_next = (self.xorshift(self.reg2) & self.xorshift_alternate(self.reg3)) ^ self.xorshift(self.reg4) ^ self.xorshift(self.reg1)
         reg2_next = (self.xorshift(self.reg1) & self.xorshift_alternate(self.reg2)) ^ self.xorshift(self.reg3) ^ self.xorshift(self.reg2)
         reg3_next = (self.xorshift(self.reg1) & self.xorshift_alternate(self.reg3)) ^ self.xorshift(self.reg2) ^ self.xorshift(self.reg3)
